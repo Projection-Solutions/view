@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data View</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; }
+    .card { border: 1px solid #ccc; padding: 20px; border-radius: 6px; background: #f9f9f9; }
+    .timestamp { font-size: 0.8em; color: #666; margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h2>Shared Data View</h2>
+  <div id="content" class="card">Loading data...</div>
+
+  <script>
+    // CONFIGURATION
+    const GITHUB_USERNAME = 'projection-solutions';
+    const PRIVATE_REPO = 'data'; // Repo holding data.json
+
+    async function loadData() {
+      const contentEl = document.getElementById('content');
+      
+      // Prompt viewer for the access key
+      const readKey = prompt("Enter access key to view data:");
+      
+      if (!readKey) {
+        contentEl.innerText = "Access denied: Key required.";
+        return;
+      }
+
+      const url = `https://api.github.com/repos/${GITHUB_USERNAME}/${PRIVATE_REPO}/contents/data.json`;
+
+      try {
+        const res = await fetch(url, {
+          headers: { 
+            Authorization: `Bearer ${readKey}`,
+            Accept: 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!res.ok) {
+          contentEl.innerText = "Access denied or file not found. Check key.";
+          return;
+        }
+
+        const fileData = await res.json();
+        // Decode Base64 string from API
+        const data = JSON.parse(atob(fileData.content));
+
+        contentEl.innerHTML = `
+          <h3>${data.title || 'No Title'}</h3>
+          <p>${data.notes || 'No Notes'}</p>
+          <div class="timestamp">Last updated: ${data.updatedAt || 'Unknown'}</div>
+        `;
+      } catch (e) {
+        contentEl.innerText = "Error loading data: " + e.message;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
